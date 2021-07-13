@@ -1,6 +1,6 @@
  ### Youtube playlist video adder
  I wanted a way of sifting through the music channels that I subscribe to and selecting songs that have above average amounts of likes and views for the channel.
- This was the solution I came up with, given the api constraints -- the daily quota of 10k, adding more than 200 videos to your playlist a day is the upper limit.
+ This was the solution I came up with, given the api constraints -- the daily quota of 10k, adding 200 videos to your playlist a day is the upper limit.
  If you also populate the list of videos to add to the playlist, that 200 decreases.
  
  This was my first attempt at anything like this. I do not think this is 100% efficient and it could be / has been done better. However, inefficiency notwithstanding, I achieved what I set out to produce. 
