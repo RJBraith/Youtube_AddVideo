@@ -36,8 +36,13 @@ if not credentials or not credentials.valid:
 with open('Add_To_Playlist.json', 'r') as f:
     atp = json.load(f)
 
-# Assigning variable
+# Importing target playlist from Vars.json
+with open('Vars.json', 'r') as file:
+    vars = json.load(file)
+
+# Assigning variables
 add_to_playlist = atp['add_to_playlist']
+target_playlist = vars['My_Playlist']
 
 # instantiating the youtube service
 youtube = googleapiclient.discovery.build('youtube', 'v3', credentials= credentials)
@@ -52,7 +57,7 @@ while True:
         part= 'snippet',
         body= {
             'snippet': {
-                'playlistId': 'PL27p_t1EMmhksCZ4qYGyXDXE1M982uN6v',
+                'playlistId': target_playlist,
                 'position': playlist_position,
                 'resourceId': {
                     'kind': 'youtube#video',
