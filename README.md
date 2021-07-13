@@ -11,7 +11,7 @@
 
 **Resources:** [Youtube API Documentation](https://developers.google.com/youtube) , [Google API Python Doc](https://github.com/googleapis/google-api-python-client/blob/master/docs/README.md) , [Google Library Install](https://developers.google.com/webmaster-tools/search-console-api-original/v3/libraries#python) , [OAuth Credential Snippets](https://gist.github.com/CoreyMSchafer/ea5e3129b81f47c7c38eb9c2e6ddcad7)
 
-#### While I don't expect anyone to go through the trouble to understand the folloring, the instructions for use are below, moreso for myself and posterity than for public use
+#### While I don't expect anyone to go through the trouble to understand the following, the instructions for use are below, moreso for myself and posterity than for public use
 #### Steps:
 
 1. [Create google developer account](https://console.developers.google.com/)
