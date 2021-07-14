@@ -7,7 +7,7 @@
 
 **Python Version:** 3.9  
 
-**Libraries Used:** numpy, json, re, datetime, os, googleapiclient, google auth
+**Libraries Used:** numpy, json, re, datetime, os, pickle, googleapiclient, google auth
 
 **Resources:** [Youtube API Documentation](https://developers.google.com/youtube) , [Google API Python Doc](https://github.com/googleapis/google-api-python-client/blob/master/docs/README.md) , [Google Library Install](https://developers.google.com/webmaster-tools/search-console-api-original/v3/libraries#python) , [OAuth Credential Snippets](https://gist.github.com/CoreyMSchafer/ea5e3129b81f47c7c38eb9c2e6ddcad7)
 
