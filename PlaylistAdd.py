@@ -32,7 +32,7 @@ if not credentials or not credentials.valid:
             print('Saving Credentials for Future Use...')
             pickle.dump(credentials, f)
 
-# Importing variables containing the channel ids and the upload playlist ids - these only need to be called once so it makes sense to have them exported to save on quota
+# Importing variables containing the channel ids and the upload playlist ids
 with open('Add_To_Playlist.json', 'r') as f:
     atp = json.load(f)
 
@@ -47,21 +47,26 @@ target_playlist = vars['My_Playlist']
 # instantiating the youtube service
 youtube = googleapiclient.discovery.build('youtube', 'v3', credentials= credentials)
 
-# creatting the position of the video in the playlist
-playlist_position = 0
+# creating a variable to track the number of videos added.
+video_track = 0
 
+# Creating an empty list to store the popped values from the Add_To_Playlist video
+to_archive = []
 # creating while loop to add desired videos to the playlist
 while True:
+    # Popping the last value from the list and saving the output to be used as an archive of what was added to the playlist.
+    lifo_videoId = str(add_to_playlist.pop())
+    to_archive.append(lifo_videoId)
+
     # creating the api request to add videos to the specified playlist
     playlist_add_request = youtube.playlistItems().insert(
         part= 'snippet',
         body= {
             'snippet': {
                 'playlistId': target_playlist,
-                'position': playlist_position,
                 'resourceId': {
                     'kind': 'youtube#video',
-                    'videoId': str(add_to_playlist[0])
+                    'videoId': lifo_videoId
                 }
             }
         }
@@ -69,12 +74,10 @@ while True:
     # sending the request to the service
     pladre_response = playlist_add_request.execute()
 
-    # increment the video position in the playlist
-    playlist_position += 1
-    # remove the added video from the list of videos to add
-    add_to_playlist.pop(0)
+    # increment the video track
+    video_track += 1
 
-    if len(add_to_playlist) < 1 or playlist_position > 99:
+    if len(add_to_playlist) < 1 or video_track > 99:
         break
 
 # Since adding all the videos in the Add_To_Playlist list would eat up too much quota, 
@@ -85,5 +88,17 @@ overwrite_add = {'add_to_playlist': add_to_playlist}
 with open('Add_To_Playlist.json', 'w') as f:
     json.dump(overwrite_add, f, indent= 2)
 
+# Loading and extending the list of videos that have been added
+with open('Archive_of_added.json', 'r')as file:
+    added_videos = json.load(file)
+
+archive_added = added_videos['added_to_playlist']
+
+archive_added.extend(to_archive)
+
+with open('Archive_of_added.json', 'w') as file:
+    json.dump(archive_added, file, indent= 2)
+
 # confirmation message
-print('Complete: added {} videos to playlist'.format(playlist_position))
+print('Complete: added {} videos to playlist'.format(video_track))
+print('Press ENTER To Exit ')

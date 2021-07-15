@@ -22,6 +22,13 @@ with open('Archive_of_added.json', 'r')as file:
 
 archive_added = archive['added_to_playlist']
 
+# Loading the list of videos to add to playlist, in case of an instance where ManagePlaylist is run before Add_To_Playlist has been fully emptied
+# This is used in combination with the Archive added list to prevent duplicate videos entering the lists.
+with open('Add_To_Playlist.json', 'r') as file:
+    addToPlaylist = json.load(file)
+
+yet_to_add = addToPlaylist['add_to_playlist']
+
 # Getting current date to compare to videos pulled - I only want videos that are at least a week old so that people have had a chance to see them and like if they desire
 current_date = datetime.today()
 
@@ -46,9 +53,7 @@ video_data = {
     'channel_names': list(chan_dict.keys()),
     'video_Id': [],
     'likeCount': [],
-    'viewCount': [],
-    'threshold': [],
-    'score': [],
+    'viewCount': []
 }
 
 # Creating a variable to select a channel's uploads playlist
@@ -95,28 +100,27 @@ while True:
 
     # setting condition for video to be marked for the playlist
     for video in vire_response['items']:
-        # If the video is not in the archive of videos already added
-        if video['id'] not in archive_added:
-            # If the video is at least a week old
-            if (current_date - datetime.strptime(video['snippet']['publishedAt'], dt_format)) >= timedelta(days= 7):
-                duration = video['contentDetails']['duration']
+        # If the video is at least a week old
+        if (current_date - datetime.strptime(video['snippet']['publishedAt'], dt_format)) >= timedelta(days= 7):
+            duration = video['contentDetails']['duration']
 
-                minutes = (minute_pattern.search(duration))
-                minutes = int(minutes.group(1)) if minutes else 0
+            minutes = (minute_pattern.search(duration))
+            minutes = int(minutes.group(1)) if minutes else 0
 
-                hours = (hour_pattern.search(duration))
-                hours = int(hours.group(1)) if hours else 0
-                # If the video is under 20 minutes long but at least 1 minute long
-                if (minutes < 20) and (minutes > 0) and (hours == 0):
-                    try:
-                        video_id = video['id']
-                        chan_video_id.append(video_id)
-                        likeCount = int(video['statistics']['likeCount'])
-                        chan_like_list.append(likeCount)
-                        viewCount = int(video['statistics']['viewCount'])
-                        chan_view_list.append(viewCount)
-                    except KeyError as l:
-                        continue
+            hours = (hour_pattern.search(duration))
+            hours = int(hours.group(1)) if hours else 0
+            # If the video is under 20 minutes long but at least 1 minute long
+            if (minutes < 20) and (minutes > 0) and (hours == 0):
+                # Have to do this to avoid videos that hide their like/viewcounts from breaking the script
+                try:
+                    video_id = video['id']
+                    chan_video_id.append(video_id)
+                    likeCount = int(video['statistics']['likeCount'])
+                    chan_like_list.append(likeCount)
+                    viewCount = int(video['statistics']['viewCount'])
+                    chan_view_list.append(viewCount)
+                except KeyError as l:
+                    continue
     # Updating value of page token to get more videos
     nextPageToken = upre_response.get('nextPageToken')
     
@@ -125,6 +129,7 @@ while True:
     if (not nextPageToken) and (uploadsIndex < len(chan_list)):
         print('Completed processing {}\'s uploads'.format(video_data['channel_names'][uploadsIndex]))
         
+        # the following keys contain a list of lists, each list represents a searched channel's video ids, likecounts and viewcounts that meet the above criteria
         video_data['video_Id'].append(chan_video_id)
         video_data['likeCount'].append(chan_like_list)
         video_data['viewCount'].append(chan_view_list)
@@ -139,62 +144,30 @@ while True:
         print('Finished...')
         break
 
-# Defining a function that can be used to standardize the likeCount list and viewCount list
-class videoCriteria:
-    def __init__(self, likeCount, viewCount):
-        '''
-        Giving the likeCount and viewCount lists, calculates the mean, standard deviation in order to standardize each list
-
-        Calculates a score by:
-            Summing the two standardized lists     
-        Then calculates a threshold variable which is:
-            The sum of the means of each standardized list     
-        '''
-
-        self.likeCount = likeCount
-        self.lc_mean = np.mean(self.likeCount)
-        self.lc_sdev = np.std(self.likeCount)
-        self.lc_std = abs((self.likeCount - self.lc_mean) / self.lc_sdev)
-
-        self.viewCount = viewCount
-        self.vc_mean = np.mean(self.viewCount)
-        self.vc_sdev = np.std(self.viewCount)
-        self.vc_std = abs((self.viewCount - self.vc_mean) / self.vc_sdev)
-
-        self.threshold = abs(np.mean(self.lc_std) + np.mean(self.vc_std))
-        self.score = (self.lc_std + self.vc_std)
-
-    def threshold(self):
-        return self.threshold
-
-    def score(self):
-        return self.score
+# importing the class created to standardise, score and create a threshold for each channel
+import channelCriteria
 
 for channel in range(len(video_data['channel_names'])):
     likeCount_list = video_data['likeCount'][channel]
     viewCount_list = video_data['viewCount'][channel]
 
-    video_criteria = videoCriteria(likeCount_list, viewCount_list)
+    channel_criteria = channelCriteria(likeCount_list, viewCount_list)
 
     for video in range(len(likeCount_list)):
-        if video_criteria.score[video] > video_criteria.threshold * 1.8:
+        if channel_criteria.score[video] > channel_criteria.threshold * 1.85:
+            # If the video is not in the archive of videos already added and isn't in the list yet to be added
+            if (video_data['video_Id'][channel][video] not in archive_added) and (video_data['video_Id'][channel][video] not in yet_to_add):
                 # Add the video to the list if the video has views and likes and the standardized ratio of likes to views surpasses the threshold
                 marked_for_add.append(video_data['video_Id'][channel][video])
 
-# Adding videos to two jsons, those to be added to the playlist (and popped out) and those to be saved in the list so that videos on that list 
-# can't be added to the playlist more than one time
-# Loading them in seperate calls so that the edits will extend the length of the list.
-with open('Add_To_Playlist.json', 'r') as file:
-    atp = json.load(file)
+# Adding videos to json, This listt will be used to add to the playlist
+# Using a seperate read and write blocks so that the new list will extend, not overwrite the prior list, this makes sure you can't accidentally
+# overwrite videos by searching again
 
-atp['add_to_playlist'].extend(marked_for_add)
+addToPlaylist['add_to_playlist'].extend(marked_for_add)
 
 with open('Add_To_Playlist.json', 'w') as file:
-    json.dump(atp, file, indent= 2)
-
-archive_added.extend(marked_for_add)
-
-with open('Archive_of_added.json', 'w') as file:
-    json.dump(archive, file, indent= 2)
+    json.dump(addToPlaylist, file, indent= 2)
 
 print('Operation Complete.. Found {} videos'.format(len(marked_for_add)))
+input('Press ENTER To Exit ')
