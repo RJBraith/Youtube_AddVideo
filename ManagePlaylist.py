@@ -145,7 +145,7 @@ while True:
         break
 
 # importing the class created to standardise, score and create a threshold for each channel
-import channelCriteria
+from channelCriteria import channelCriteria
 
 for channel in range(len(video_data['channel_names'])):
     likeCount_list = video_data['likeCount'][channel]
